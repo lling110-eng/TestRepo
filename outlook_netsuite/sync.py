@@ -12,7 +12,7 @@ For each sent email:
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone  # timedelta used for watermark advance
 from pathlib import Path
 
 from .config import Config
@@ -28,14 +28,15 @@ class SyncState:
     def __init__(self, path: str):
         self._path = Path(path)
 
-    def load(self, fallback_minutes: int) -> datetime:
+    def load(self) -> datetime:
         if self._path.exists():
             try:
                 data = json.loads(self._path.read_text())
                 return datetime.fromisoformat(data["last_synced_at"])
             except Exception as exc:
-                logger.warning("Could not read sync state (%s); using fallback.", exc)
-        return datetime.now(timezone.utc) - timedelta(minutes=fallback_minutes)
+                logger.warning("Could not read sync state (%s); starting from now.", exc)
+        # No prior state — only process emails going forward from this moment
+        return datetime.now(timezone.utc)
 
     def save(self, last_synced_at: datetime) -> None:
         self._path.write_text(json.dumps({"last_synced_at": last_synced_at.isoformat()}))
@@ -55,7 +56,7 @@ class OutlookNetSuiteSync:
         Fetch new sent emails since the last sync and post them to NetSuite.
         Returns a summary dict.
         """
-        since = self._state.load(self._config.INITIAL_LOOKBACK_MINUTES)
+        since = self._state.load()
         logger.info("Syncing sent emails since %s", since.isoformat())
 
         emails = self._outlook.get_sent_emails_since(since)

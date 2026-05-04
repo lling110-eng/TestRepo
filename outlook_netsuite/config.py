@@ -26,6 +26,5 @@ class Config:
     NETSUITE_TOKEN_SECRET: str = _require("NETSUITE_TOKEN_SECRET")
 
     # Sync settings
-    INITIAL_LOOKBACK_MINUTES: int = int(os.getenv("INITIAL_LOOKBACK_MINUTES", "60"))
     POLL_INTERVAL_MINUTES: int = int(os.getenv("POLL_INTERVAL_MINUTES", "5"))
     SYNC_STATE_FILE: str = os.getenv("SYNC_STATE_FILE", ".sync_state.json")
